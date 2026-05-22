@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Track Your Complaint - Fortinet</title>
+    <title>Track Complaint - Fortinet</title>
     <style>
         * {
             margin: 0;
@@ -59,7 +59,6 @@
             font-weight: 600;
             cursor: pointer;
             width: 100%;
-            margin-top: 0.5rem;
         }
         .complaint-details {
             background: #f8fafc;
@@ -82,18 +81,11 @@
             border-radius: 0.75rem;
             margin-top: 1rem;
         }
-        .alert {
-            padding: 1rem;
-            border-radius: 0.75rem;
-            margin-top: 1rem;
-        }
         .alert-error {
             background: #fee2e2;
             color: #991b1b;
-        }
-        .alert-success {
-            background: #d1fae5;
-            color: #065f46;
+            padding: 1rem;
+            border-radius: 0.75rem;
         }
         .back-link {
             display: inline-block;
@@ -101,13 +93,17 @@
             color: #1b4f6e;
             text-decoration: none;
         }
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <h1>🔍 Track Your Complaint</h1>
-        <p>Enter your tracking ID to check status</p>
+        <p>Enter the tracking ID you received</p>
     </div>
     <div class="content">
         <div class="search-box">
@@ -126,18 +122,18 @@
         const resultDiv = document.getElementById('result');
         
         if (!trackingId) {
-            resultDiv.innerHTML = '<div class="alert alert-error">Please enter a tracking ID.</div>';
+            resultDiv.innerHTML = '<div class="alert-error">Please enter a tracking ID.</div>';
             return;
         }
         
-        resultDiv.innerHTML = '<div style="text-align: center;">Loading...</div>';
+        resultDiv.innerHTML = '<div class="loading">Loading...</div>';
         
         try {
-            const res = await fetch(`/api/complaints/track/${trackingId}`);
-            const data = await res.json();
+            const response = await fetch(`/api/complaints/track/${trackingId}`);
+            const data = await response.json();
             
-            if (!res.ok) {
-                resultDiv.innerHTML = `<div class="alert alert-error">${data.error || 'Complaint not found.'}</div>`;
+            if (!response.ok) {
+                resultDiv.innerHTML = `<div class="alert-error">${data.error || 'Complaint not found. Check your tracking ID.'}</div>`;
                 return;
             }
             
@@ -154,18 +150,19 @@
                     </div>
                     ${data.reply ? `
                         <div class="reply-box">
-                            <strong>✅ Fortinet Support Response (${new Date(data.repliedAt).toLocaleString()}):</strong><br>
+                            <strong>✅ Fortinet Response (${new Date(data.repliedAt).toLocaleString()}):</strong><br>
                             ${escapeHtml(data.reply)}
                         </div>
                     ` : `
                         <div class="reply-box" style="background: #fff3e0;">
-                            <strong>⏳ Status:</strong> Our team is reviewing your complaint. We'll respond within 24-48 hours.
+                            <strong>⏳ Pending:</strong> Our team is reviewing your complaint. We'll respond within 24-48 hours.
                         </div>
                     `}
                 </div>
             `;
         } catch (err) {
-            resultDiv.innerHTML = '<div class="alert alert-error">Network error. Please try again.</div>';
+            console.error('Error:', err);
+            resultDiv.innerHTML = '<div class="alert-error">Network error. Make sure server is running.</div>';
         }
     }
     
