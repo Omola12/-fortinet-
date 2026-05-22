@@ -1,101 +1,124 @@
-// server.js
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
+const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data.json');
+const PORT = 3000;
 
+// Middleware
+app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 
-// Initialize data file if missing
-function initDataFile() {
-  if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify({ complaints: [] }, null, 2));
-  }
+// Data file setup
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'complaints.json');
+
+if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR);
 }
-initDataFile();
-
-function readData() {
-  const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-  return JSON.parse(raw);
+if (!fs.existsSync(DATA_FILE)) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
 }
 
-function writeData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+function readComplaints() {
+    const data = fs.readFileSync(DATA_FILE, 'utf8');
+    return JSON.parse(data);
 }
 
-function newId() {
-  return crypto.randomBytes(8).toString('hex');
+function writeComplaints(complaints) {
+    fs.writeFileSync(DATA_FILE, JSON.stringify(complaints, null, 2));
 }
 
-// Create a new complaint
+// ============= PUBLIC API (for normal users) =============
+
+// GET all complaints (NOT exposed to public - only for internal use)
+// But we'll keep it for admin panel access via fetch
+
+// POST new complaint (public form)
 app.post('/api/complaints', (req, res) => {
-  const { name, email, subject, message } = req.body || {};
-  if (!name || !email || !subject || !message) {
-    return res.status(400).json({ error: 'Missing required fields.' });
-  }
-  const data = readData();
-  const complaint = {
-    id: newId(),
-    createdAt: new Date().toISOString(),
-    name,
-    email,
-    subject,
-    message,
-    status: 'open',
-    replies: [] // { id, createdAt, adminName, message }
-  };
-  data.complaints.push(complaint);
-  writeData(data);
-  res.status(201).json({ id: complaint.id });
+    const { name, email, subject, message } = req.body;
+    
+    if (!name || !email || !message) {
+        return res.status(400).json({ error: 'Name, email, and complaint message are required.' });
+    }
+    
+    const complaints = readComplaints();
+    const newComplaint = {
+        id: Date.now().toString(),
+        name,
+        email,
+        subject: subject || 'General',
+        message,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        reply: null,
+        repliedAt: null
+    };
+    
+    complaints.unshift(newComplaint);
+    writeComplaints(complaints);
+    
+    res.status(201).json({ success: true, id: newComplaint.id });
 });
 
-// List complaints (basic, could add filters later)
-app.get('/api/complaints', (req, res) => {
-  const data = readData();
-  // Sort newest first
-  const sorted = [...data.complaints].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  res.json(sorted);
+// ============= ADMIN API (protected by simple password in frontend) =============
+
+// Get all complaints (for admin)
+app.get('/api/admin/complaints', (req, res) => {
+    // Optional: Add API key check here if you want more security
+    const complaints = readComplaints();
+    res.json(complaints);
 });
 
-// Get a single complaint
-app.get('/api/complaints/:id', (req, res) => {
-  const data = readData();
-  const item = data.complaints.find(c => c.id === req.params.id);
-  if (!item) return res.status(404).json({ error: 'Not found' });
-  res.json(item);
+// Reply to complaint (admin only)
+app.post('/api/admin/complaints/:id/reply', (req, res) => {
+    const { id } = req.params;
+    const { replyMessage } = req.body;
+    
+    if (!replyMessage || replyMessage.trim() === '') {
+        return res.status(400).json({ error: 'Reply message cannot be empty.' });
+    }
+    
+    const complaints = readComplaints();
+    const complaintIndex = complaints.findIndex(c => c.id === id);
+    
+    if (complaintIndex === -1) {
+        return res.status(404).json({ error: 'Complaint not found.' });
+    }
+    
+    complaints[complaintIndex].reply = replyMessage.trim();
+    complaints[complaintIndex].status = 'replied';
+    complaints[complaintIndex].repliedAt = new Date().toISOString();
+    
+    writeComplaints(complaints);
+    res.json({ success: true, complaint: complaints[complaintIndex] });
 });
 
-// Add a reply to a complaint
-app.post('/api/complaints/:id/replies', (req, res) => {
-  const { adminName, message, status } = req.body || {};
-  if (!adminName || !message) {
-    return res.status(400).json({ error: 'adminName and message are required.' });
-  }
-  const data = readData();
-  const item = data.complaints.find(c => c.id === req.params.id);
-  if (!item) return res.status(404).json({ error: 'Not found' });
-
-  const reply = {
-    id: newId(),
-    createdAt: new Date().toISOString(),
-    adminName,
-    message
-  };
-  item.replies.push(reply);
-
-  if (status && ['open', 'pending', 'resolved', 'closed'].includes(status)) {
-    item.status = status;
-  }
-
-  writeData(data);
-  res.status(201).json(reply);
+// Delete complaint (admin only)
+app.delete('/api/admin/complaints/:id', (req, res) => {
+    const { id } = req.params;
+    const complaints = readComplaints();
+    const filtered = complaints.filter(c => c.id !== id);
+    
+    if (filtered.length === complaints.length) {
+        return res.status(404).json({ error: 'Complaint not found.' });
+    }
+    
+    writeComplaints(filtered);
+    res.json({ success: true });
 });
 
+// Serve admin panel on a separate, non-linked route
+app.get('/admin-panel', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Start server
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`✅ Fortinet Server running at http://localhost:${PORT}`);
+    console.log(`📝 Public form: http://localhost:${PORT}`);
+    console.log(`🔐 Admin panel: http://localhost:${PORT}/admin-panel (NO public link!)`);
+    console.log(`📁 Data stored in: ${DATA_FILE}`);
 });
