@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fortinet — Submit a Complaint</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header>
+    <h1>Fortinet — Customer Complaints</h1>
+    <p>Tell us what went wrong and how we can help.</p>
+  </header>
+
+  <main>
+    <form id="complaintForm">
+      <div class="field">
+        <label>Name</label>
+        <input type="text" name="name" required/>
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" required/>
+      </div>
+      <div class="field">
+        <label>Subject</label>
+        <input type="text" name="subject" required/>
+      </div>
+      <div class="field">
+        <label>Message</label>
+        <textarea name="message" rows="6" required></textarea>
+      </div>
+      <button type="submit">Submit Complaint</button>
+      <p id="status" class="status"></p>
+    </form>
+  </main>
+
+  <script>
+    const form = document.getElementById('complaintForm');
+    const statusEl = document.getElementById('status');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      statusEl.textContent = 'Submitting...';
+
+      const formData = new FormData(form);
+      const payload = {
+        name: formData.get('name').trim(),
+        email: formData.get('email').trim(),
+        subject: formData.get('subject').trim(),
+        message: formData.get('message').trim()
+      };
+
+      try {
+        const res = await fetch('/api/complaints', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Failed to submit');
+        }
+
+        const data = await res.json();
+        statusEl.textContent = 'Thanks — your complaint has been submitted. Reference ID: ' + data.id;
+        form.reset();
+      } catch (err) {
+        statusEl.textContent = 'Error: ' + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
