@@ -34,11 +34,6 @@
         }
         .header h1 {
             font-size: 2rem;
-            letter-spacing: -0.5px;
-        }
-        .header p {
-            opacity: 0.8;
-            margin-top: 0.5rem;
         }
         .form-content {
             padding: 2rem;
@@ -58,12 +53,10 @@
             border: 2px solid #e2e8f0;
             border-radius: 1rem;
             font-size: 1rem;
-            transition: all 0.2s;
         }
         input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: #1b4f6e;
-            box-shadow: 0 0 0 3px rgba(27,79,110,0.1);
         }
         textarea {
             min-height: 120px;
@@ -79,17 +72,14 @@
             font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: 0.2s;
         }
         button:hover {
             background: #1b4f6e;
-            transform: translateY(-1px);
         }
         .alert {
             margin-top: 1.5rem;
             padding: 1rem;
             border-radius: 1rem;
-            font-weight: 500;
         }
         .alert-success {
             background: #d1fae5;
@@ -101,24 +91,28 @@
             color: #991b1b;
             border-left: 4px solid #ef4444;
         }
-        .tracking-info {
+        .tracking-box {
             background: #f0f9ff;
+            border: 2px dashed #1b4f6e;
             padding: 1rem;
             border-radius: 1rem;
             margin-top: 1rem;
             text-align: center;
         }
+        .tracking-id {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #0f2c3b;
+            letter-spacing: 1px;
+            margin: 0.5rem 0;
+        }
         .footer-links {
             margin-top: 1.5rem;
             text-align: center;
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
         }
         .footer-links a {
             color: #1b4f6e;
             text-decoration: none;
-            font-size: 0.9rem;
         }
     </style>
 </head>
@@ -126,7 +120,7 @@
 <div class="container">
     <div class="header">
         <h1>Fortinet 🔒</h1>
-        <p>We value your feedback — submit your complaint and we'll respond within 24 hours</p>
+        <p>Submit your complaint and get a tracking ID instantly</p>
     </div>
     <div class="form-content">
         <form id="complaintForm">
@@ -137,7 +131,6 @@
             <div class="form-group">
                 <label>Email *</label>
                 <input type="email" id="email" placeholder="you@example.com" required>
-                <small style="color: #666;">You'll receive a tracking ID via email</small>
             </div>
             <div class="form-group">
                 <label>Subject</label>
@@ -151,13 +144,13 @@
             </div>
             <div class="form-group">
                 <label>Your complaint *</label>
-                <textarea id="message" placeholder="Please describe your issue in detail..."></textarea>
+                <textarea id="message" placeholder="Please describe your issue..."></textarea>
             </div>
             <button type="submit" id="submitBtn">📨 Submit Complaint</button>
         </form>
         <div id="feedback"></div>
         <div class="footer-links">
-            <a href="/track.html">🔍 Track your complaint</a>
+            <a href="/track.html">🔍 Already have a tracking ID? Check status here</a>
         </div>
     </div>
 </div>
@@ -169,13 +162,14 @@
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
         const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
         const subject = document.getElementById('subject').value;
         const message = document.getElementById('message').value.trim();
 
         if (!name || !email || !message) {
-            showFeedback('Please fill in name, email, and complaint.', 'error');
+            showFeedback('Please fill in all required fields.', 'error');
             return;
         }
 
@@ -183,24 +177,33 @@
         submitBtn.textContent = 'Submitting...';
 
         try {
-            const res = await fetch('/api/complaints', {
+            const response = await fetch('/api/complaints', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, email, subject, message })
             });
-            const data = await res.json();
-            if (res.ok) {
-                showFeedback(`
-                    ✅ Complaint submitted successfully!<br>
-                    <strong>Tracking ID: ${data.trackingId}</strong><br>
-                    Check your email for confirmation and use this ID to track your complaint.
-                `, 'success');
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Show success with tracking ID
+                feedbackDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        ✅ Complaint submitted successfully!
+                        <div class="tracking-box">
+                            📋 <strong>SAVE THIS TRACKING ID:</strong>
+                            <div class="tracking-id">${data.trackingId}</div>
+                            <small>Use this ID to check your complaint status</small>
+                        </div>
+                    </div>
+                `;
                 form.reset();
             } else {
-                showFeedback(data.error || 'Submission failed. Please try again.', 'error');
+                showFeedback(data.error || 'Submission failed.', 'error');
             }
         } catch (err) {
-            showFeedback('Network error. Please check your connection.', 'error');
+            console.error('Error:', err);
+            showFeedback('Network error. Make sure server is running on port 3000', 'error');
         } finally {
             submitBtn.disabled = false;
             submitBtn.textContent = '📨 Submit Complaint';
@@ -209,9 +212,6 @@
 
     function showFeedback(msg, type) {
         feedbackDiv.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-        setTimeout(() => {
-            if (feedbackDiv.innerHTML.includes(msg)) feedbackDiv.innerHTML = '';
-        }, 8000);
     }
 </script>
 </body>
