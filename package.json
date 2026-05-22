@@ -1,7 +1,7 @@
 {
   "name": "fortinet-complaints",
   "version": "1.0.0",
-  "description": "Fortinet customer complaint system with separate secure admin panel",
+  "description": "Fortinet complaint system with tracking",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
