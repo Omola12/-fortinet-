@@ -1,75 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fortinet — Submit a Complaint</title>
-  <link rel="stylesheet" href="styles.css"/>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortinet | Customer Support</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #0a2b3e 0%, #1b4f6e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 700px;
+            width: 100%;
+            background: white;
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            overflow: hidden;
+        }
+        .header {
+            background: #0f2c3b;
+            padding: 2rem 2rem 1.5rem;
+            color: white;
+        }
+        .header h1 {
+            font-size: 2rem;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+        .form-content {
+            padding: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1e293b;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #1b4f6e;
+            box-shadow: 0 0 0 3px rgba(27,79,110,0.1);
+        }
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+        button {
+            background: #0f2c3b;
+            color: white;
+            border: none;
+            padding: 0.9rem;
+            width: 100%;
+            border-radius: 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #1b4f6e;
+            transform: translateY(-1px);
+        }
+        .alert {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        .footer-note {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>Fortinet — Customer Complaints</h1>
-    <p>Tell us what went wrong and how we can help.</p>
-  </header>
+<div class="container">
+    <div class="header">
+        <h1>Fortinet 🔒</h1>
+        <p>We value your feedback — submit your complaint and our team will respond promptly.</p>
+    </div>
+    <div class="form-content">
+        <form id="complaintForm">
+            <div class="form-group">
+                <label>Full name *</label>
+                <input type="text" id="name" placeholder="John Doe" required>
+            </div>
+            <div class="form-group">
+                <label>Email *</label>
+                <input type="email" id="email" placeholder="you@example.com" required>
+            </div>
+            <div class="form-group">
+                <label>Subject</label>
+                <select id="subject">
+                    <option value="Technical Issue">Technical Issue</option>
+                    <option value="Billing">Billing / Payment</option>
+                    <option value="Product Feedback">Product Feedback</option>
+                    <option value="Service Quality">Service Quality</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Your complaint *</label>
+                <textarea id="message" placeholder="Please describe your issue in detail..."></textarea>
+            </div>
+            <button type="submit" id="submitBtn">📨 Submit Complaint</button>
+        </form>
+        <div id="feedback"></div>
+        <div class="footer-note">
+            Fortinet Customer Support — We'll respond within 24 hours
+        </div>
+    </div>
+</div>
 
-  <main>
-    <form id="complaintForm">
-      <div class="field">
-        <label>Name</label>
-        <input type="text" name="name" required/>
-      </div>
-      <div class="field">
-        <label>Email</label>
-        <input type="email" name="email" required/>
-      </div>
-      <div class="field">
-        <label>Subject</label>
-        <input type="text" name="subject" required/>
-      </div>
-      <div class="field">
-        <label>Message</label>
-        <textarea name="message" rows="6" required></textarea>
-      </div>
-      <button type="submit">Submit Complaint</button>
-      <p id="status" class="status"></p>
-    </form>
-  </main>
-
-  <script>
+<script>
     const form = document.getElementById('complaintForm');
-    const statusEl = document.getElementById('status');
+    const feedbackDiv = document.getElementById('feedback');
+    const submitBtn = document.getElementById('submitBtn');
 
     form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      statusEl.textContent = 'Submitting...';
+        e.preventDefault();
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const subject = document.getElementById('subject').value;
+        const message = document.getElementById('message').value.trim();
 
-      const formData = new FormData(form);
-      const payload = {
-        name: formData.get('name').trim(),
-        email: formData.get('email').trim(),
-        subject: formData.get('subject').trim(),
-        message: formData.get('message').trim()
-      };
-
-      try {
-        const res = await fetch('/api/complaints', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || 'Failed to submit');
+        if (!name || !email || !message) {
+            showFeedback('Please fill in name, email, and complaint.', 'error');
+            return;
         }
 
-        const data = await res.json();
-        statusEl.textContent = 'Thanks — your complaint has been submitted. Reference ID: ' + data.id;
-        form.reset();
-      } catch (err) {
-        statusEl.textContent = 'Error: ' + err.message;
-      }
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting...';
+
+        try {
+            const res = await fetch('/api/complaints', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, subject, message })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                showFeedback('✅ Complaint submitted successfully! Our team will reply soon.', 'success');
+                form.reset();
+            } else {
+                showFeedback(data.error || 'Submission failed. Please try again.', 'error');
+            }
+        } catch (err) {
+            showFeedback('Network error. Please check your connection.', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '📨 Submit Complaint';
+        }
     });
-  </script>
+
+    function showFeedback(msg, type) {
+        feedbackDiv.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+        setTimeout(() => {
+            if (feedbackDiv.innerHTML.includes(msg)) feedbackDiv.innerHTML = '';
+        }, 5000);
+    }
+</script>
 </body>
 </html>
