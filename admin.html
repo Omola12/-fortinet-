@@ -1,163 +1,325 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fortinet — Admin Panel</title>
-  <link rel="stylesheet" href="styles.css"/>
-  <style>
-    .list { display: grid; gap: 12px; }
-    .card { border: 1px solid #ddd; padding: 12px; border-radius: 8px; cursor: pointer; background: #fff; }
-    .active { border-color: #4a6; box-shadow: 0 0 0 2px #cfe; }
-    .thread { border: 1px solid #ddd; padding: 12px; border-radius: 8px; background: #fafafa; }
-    .meta { color: #555; font-size: 0.9rem; }
-    .reply { border-left: 3px solid #4a6; padding-left: 10px; margin: 10px 0; background: #fff; }
-    .row { display: flex; gap: 12px; }
-    .row > * { flex: 1; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortinet Admin | Secure Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', monospace;
+        }
+        body {
+            background: #0f2c3b;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .login-container, .admin-container {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 2rem;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        .login-box {
+            max-width: 400px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 0.75rem;
+            margin: 1rem 0;
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            font-size: 1rem;
+        }
+        .login-box button {
+            background: #0f2c3b;
+            color: white;
+            padding: 0.75rem;
+            width: 100%;
+            border: none;
+            border-radius: 2rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .error {
+            color: #dc2626;
+            margin-top: 1rem;
+        }
+        .admin-header {
+            background: #0f2c3b;
+            color: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-card {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 1rem;
+            flex: 1;
+            text-align: center;
+        }
+        .complaint-card {
+            background: #f8fafc;
+            border-radius: 1rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+        }
+        .complaint-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .status-pending { background: #fed7aa; color: #9b4d00; }
+        .status-replied { background: #c7f9cc; color: #0a5c2e; }
+        .reply-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            margin: 0.5rem 0;
+        }
+        button {
+            background: #0f2c3b;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 2rem;
+            cursor: pointer;
+        }
+        .delete-btn {
+            background: #dc2626;
+            margin-left: 0.5rem;
+        }
+        .search-box {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+        }
+        .logout-btn {
+            background: #dc2626;
+            padding: 0.5rem 1rem;
+        }
+        h2 {
+            margin-bottom: 1rem;
+        }
+    </style>
 </head>
 <body>
-  <header>
-    <h1>Fortinet — Admin Panel</h1>
-    <p>View complaints, reply, and update status.</p>
-  </header>
+<div id="app"></div>
 
-  <main class="row">
-    <section style="flex: 1;">
-      <h2>Complaints</h2>
-      <div id="list" class="list"></div>
-    </section>
-
-    <section style="flex: 1.5;">
-      <h2>Details</h2>
-      <div id="details" class="thread">Select a complaint to view details.</div>
-
-      <h3>Send Reply</h3>
-      <form id="replyForm">
-        <div class="field">
-          <label>Admin Name</label>
-          <input type="text" name="adminName" required/>
-        </div>
-        <div class="field">
-          <label>Message</label>
-          <textarea name="message" rows="4" required></textarea>
-        </div>
-        <div class="field">
-          <label>Status</label>
-          <select name="status">
-            <option value="">(no change)</option>
-            <option>open</option>
-            <option>pending</option>
-            <option>resolved</option>
-            <option>closed</option>
-          </select>
-        </div>
-        <button type="submit" disabled>Send Reply</button>
-        <p id="replyStatus" class="status"></p>
-      </form>
-    </section>
-  </main>
-
-  <script>
-    const listEl = document.getElementById('list');
-    const detailsEl = document.getElementById('details');
-    const replyForm = document.getElementById('replyForm');
-    const replyStatus = document.getElementById('replyStatus');
-
-    let complaints = [];
-    let selectedId = null;
-
-    async function fetchComplaints() {
-      const res = await fetch('/api/complaints');
-      complaints = await res.json();
-      renderList();
+<script>
+    const ADMIN_PASSWORD = "FortinetAdmin2025"; // Change this to your secure password
+    
+    function checkAuth() {
+        return sessionStorage.getItem('adminAuthenticated') === 'true';
     }
-
-    function renderList() {
-      listEl.innerHTML = '';
-      complaints.forEach(c => {
-        const card = document.createElement('div');
-        card.className = 'card' + (c.id === selectedId ? ' active' : '');
-        card.innerHTML = `
-          <div><strong>${escapeHTML(c.subject)}</strong></div>
-          <div class="meta">${escapeHTML(c.name)} • ${escapeHTML(c.email)} • ${new Date(c.createdAt).toLocaleString()}</div>
-          <div class="meta">Status: ${escapeHTML(c.status)}</div>
-          <div>${escapeHTML(c.message).slice(0, 140)}${c.message.length > 140 ? '…' : ''}</div>
-        `;
-        card.addEventListener('click', () => selectComplaint(c.id));
-        listEl.appendChild(card);
-      });
-    }
-
-    async function selectComplaint(id) {
-      selectedId = id;
-      replyForm.querySelector('button[type="submit"]').disabled = false;
-      renderList();
-      const res = await fetch('/api/complaints/' + id);
-      const c = await res.json();
-      detailsEl.innerHTML = `
-        <div><strong>${escapeHTML(c.subject)}</strong></div>
-        <div class="meta">From: ${escapeHTML(c.name)} &lt;${escapeHTML(c.email)}&gt; • ${new Date(c.createdAt).toLocaleString()}</div>
-        <div style="margin-top:8px;">${nl2br(escapeHTML(c.message))}</div>
-        <div class="meta" style="margin-top:8px;">Status: ${escapeHTML(c.status)}</div>
-        <h4>Replies</h4>
-        ${c.replies.length ? c.replies.map(r => `
-          <div class="reply">
-            <div class="meta">${escapeHTML(r.adminName)} • ${new Date(r.createdAt).toLocaleString()}</div>
-            <div>${nl2br(escapeHTML(r.message))}</div>
-          </div>
-        `).join('') : '<div class="meta">No replies yet.</div>'}
-      `;
-    }
-
-    replyForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!selectedId) return;
-      replyStatus.textContent = 'Sending...';
-      const fd = new FormData(replyForm);
-      const payload = {
-        adminName: fd.get('adminName').trim(),
-        message: fd.get('message').trim(),
-        status: fd.get('status') || undefined
-      };
-      try {
-        const res = await fetch('/api/complaints/' + selectedId + '/replies', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error || 'Failed to send reply');
+    
+    function login(password) {
+        if (password === ADMIN_PASSWORD) {
+            sessionStorage.setItem('adminAuthenticated', 'true');
+            renderAdminPanel();
+            return true;
         }
-        replyForm.reset();
-        replyForm.querySelector('button[type="submit"]').disabled = true;
-        replyStatus.textContent = 'Reply sent.';
-        await fetchComplaints();
-        await selectComplaint(selectedId); // refresh thread
-      } catch (err) {
-        replyStatus.textContent = 'Error: ' + err.message;
-      } finally {
-        setTimeout(() => replyStatus.textContent = '', 2000);
-      }
-    });
-
-    function escapeHTML(str) {
-      return String(str)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
+        return false;
     }
-
-    function nl2br(str) {
-      return str.replaceAll('\n', '<br>');
+    
+    function logout() {
+        sessionStorage.removeItem('adminAuthenticated');
+        renderLogin();
     }
-
-    fetchComplaints();
-    // Optional: refresh list periodically
-    setInterval(fetchComplaints, 10000);
-  </script>
+    
+    async function fetchComplaints() {
+        const res = await fetch('/api/admin/complaints');
+        return await res.json();
+    }
+    
+    async function sendReply(id, replyMessage) {
+        const res = await fetch(`/api/admin/complaints/${id}/reply`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ replyMessage })
+        });
+        if (res.ok) {
+            renderAdminPanel();
+        } else {
+            alert('Failed to send reply');
+        }
+    }
+    
+    async function deleteComplaint(id) {
+        if (!confirm('Delete this complaint permanently?')) return;
+        const res = await fetch(`/api/admin/complaints/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            renderAdminPanel();
+        } else {
+            alert('Failed to delete');
+        }
+    }
+    
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+    
+    async function renderAdminPanel() {
+        const complaints = await fetchComplaints();
+        const total = complaints.length;
+        const pending = complaints.filter(c => c.status === 'pending').length;
+        const replied = complaints.filter(c => c.status === 'replied').length;
+        
+        const appDiv = document.getElementById('app');
+        appDiv.innerHTML = `
+            <div class="admin-container">
+                <div class="admin-header">
+                    <div>
+                        <h1>🔐 Fortinet Admin Panel</h1>
+                        <p>Secure Complaint Management System</p>
+                    </div>
+                    <button class="logout-btn" onclick="logout()">🚪 Logout</button>
+                </div>
+                
+                <div class="stats">
+                    <div class="stat-card">📋 Total: ${total}</div>
+                    <div class="stat-card">⏳ Pending: ${pending}</div>
+                    <div class="stat-card">✅ Replied: ${replied}</div>
+                </div>
+                
+                <input type="text" id="searchInput" class="search-box" placeholder="Search by name, email, subject, or message...">
+                
+                <h2>All Customer Complaints</h2>
+                <div id="complaintsList"></div>
+            </div>
+        `;
+        
+        const searchInput = document.getElementById('searchInput');
+        const complaintsList = document.getElementById('complaintsList');
+        
+        function renderList() {
+            const searchTerm = searchInput.value.toLowerCase();
+            let filtered = complaints;
+            if (searchTerm) {
+                filtered = complaints.filter(c => 
+                    c.name.toLowerCase().includes(searchTerm) ||
+                    c.email.toLowerCase().includes(searchTerm) ||
+                    c.subject.toLowerCase().includes(searchTerm) ||
+                    c.message.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            if (filtered.length === 0) {
+                complaintsList.innerHTML = '<p style="text-align:center; padding:2rem;">No complaints found.</p>';
+                return;
+            }
+            
+            complaintsList.innerHTML = filtered.map(complaint => `
+                <div class="complaint-card">
+                    <div class="complaint-header">
+                        <div>
+                            <strong>${escapeHtml(complaint.name)}</strong> (${escapeHtml(complaint.email)})<br>
+                            <small>📅 ${new Date(complaint.createdAt).toLocaleString()}</small>
+                        </div>
+                        <div>
+                            <span class="status status-${complaint.status}">${complaint.status.toUpperCase()}</span>
+                            <button class="delete-btn" onclick="deleteComplaint('${complaint.id}')">🗑️ Delete</button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 0.5rem;">
+                        <strong>📌 Subject:</strong> ${escapeHtml(complaint.subject)}<br>
+                        <strong>💬 Complaint:</strong>
+                        <div style="background:white; padding:0.75rem; border-radius:0.5rem; margin-top:0.5rem;">
+                            ${escapeHtml(complaint.message)}
+                        </div>
+                    </div>
+                    ${complaint.reply ? `
+                        <div style="background:#e6f7ff; padding:0.75rem; border-radius:0.5rem; margin-top:0.75rem;">
+                            <strong>✅ Admin Reply (${complaint.repliedAt ? new Date(complaint.repliedAt).toLocaleString() : ''}):</strong><br>
+                            ${escapeHtml(complaint.reply)}
+                        </div>
+                    ` : ''}
+                    <div class="reply-section">
+                        <textarea id="reply-${complaint.id}" rows="2" placeholder="Write your reply here..."></textarea>
+                        <button onclick="sendReply('${complaint.id}', document.getElementById('reply-${complaint.id}').value)">✉️ Send Reply</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        searchInput.addEventListener('input', renderList);
+        renderList();
+    }
+    
+    function renderLogin() {
+        const appDiv = document.getElementById('app');
+        appDiv.innerHTML = `
+            <div class="login-container">
+                <div class="login-box">
+                    <h1>🔐 Fortinet Admin</h1>
+                    <p>Secure Access Only</p>
+                    <input type="password" id="password" placeholder="Enter admin password" autofocus>
+                    <button onclick="attemptLogin()">Login to Dashboard</button>
+                    <div id="loginError" class="error"></div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') attemptLogin();
+        });
+    }
+    
+    window.attemptLogin = function() {
+        const password = document.getElementById('password').value;
+        if (login(password)) {
+            document.getElementById('loginError').innerHTML = '';
+        } else {
+            document.getElementById('loginError').innerHTML = '❌ Invalid password. Access denied.';
+        }
+    };
+    
+    // Initialize
+    if (checkAuth()) {
+        renderAdminPanel();
+    } else {
+        renderLogin();
+    }
+</script>
 </body>
 </html>
